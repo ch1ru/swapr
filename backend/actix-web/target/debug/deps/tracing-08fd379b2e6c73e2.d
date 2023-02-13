@@ -1,0 +1,13 @@
+/home/kazute/Desktop/Rust-docker/new/actix-web/target/debug/deps/tracing-08fd379b2e6c73e2.rmeta: /home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-0.1.21/src/lib.rs /home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-0.1.21/src/macros.rs /home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-0.1.21/src/dispatcher.rs /home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-0.1.21/src/field.rs /home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-0.1.21/src/instrument.rs /home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-0.1.21/src/level_filters.rs /home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-0.1.21/src/span.rs /home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-0.1.21/src/stdlib.rs /home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-0.1.21/src/subscriber.rs
+
+/home/kazute/Desktop/Rust-docker/new/actix-web/target/debug/deps/tracing-08fd379b2e6c73e2.d: /home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-0.1.21/src/lib.rs /home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-0.1.21/src/macros.rs /home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-0.1.21/src/dispatcher.rs /home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-0.1.21/src/field.rs /home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-0.1.21/src/instrument.rs /home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-0.1.21/src/level_filters.rs /home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-0.1.21/src/span.rs /home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-0.1.21/src/stdlib.rs /home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-0.1.21/src/subscriber.rs
+
+/home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-0.1.21/src/lib.rs:
+/home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-0.1.21/src/macros.rs:
+/home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-0.1.21/src/dispatcher.rs:
+/home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-0.1.21/src/field.rs:
+/home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-0.1.21/src/instrument.rs:
+/home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-0.1.21/src/level_filters.rs:
+/home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-0.1.21/src/span.rs:
+/home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-0.1.21/src/stdlib.rs:
+/home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/tracing-0.1.21/src/subscriber.rs:

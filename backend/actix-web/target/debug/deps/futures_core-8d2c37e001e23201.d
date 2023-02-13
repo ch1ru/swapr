@@ -1,0 +1,11 @@
+/home/kazute/Desktop/Rust-docker/backend/target/debug/deps/futures_core-8d2c37e001e23201.rmeta: /home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.6/src/lib.rs /home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.6/src/future.rs /home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.6/src/stream.rs /home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.6/src/task/mod.rs /home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.6/src/task/poll.rs /home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.6/src/task/__internal/mod.rs /home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.6/src/task/__internal/atomic_waker.rs
+
+/home/kazute/Desktop/Rust-docker/backend/target/debug/deps/futures_core-8d2c37e001e23201.d: /home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.6/src/lib.rs /home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.6/src/future.rs /home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.6/src/stream.rs /home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.6/src/task/mod.rs /home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.6/src/task/poll.rs /home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.6/src/task/__internal/mod.rs /home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.6/src/task/__internal/atomic_waker.rs
+
+/home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.6/src/lib.rs:
+/home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.6/src/future.rs:
+/home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.6/src/stream.rs:
+/home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.6/src/task/mod.rs:
+/home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.6/src/task/poll.rs:
+/home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.6/src/task/__internal/mod.rs:
+/home/kazute/.cargo/registry/src/github.com-1ecc6299db9ec823/futures-core-0.3.6/src/task/__internal/atomic_waker.rs:
