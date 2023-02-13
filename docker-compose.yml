@@ -1,0 +1,82 @@
+version: "3"
+services:
+  actix-web:
+    build: 
+      context: ./backend/actix-web
+      dockerfile: Dockerfile
+    container_name: actix-web
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    networks:
+      bridgednet:
+        ipv4_address: 192.168.10.2
+
+  bitcoind:
+    container_name: bitcoind
+    build: 
+      context: ./backend/bitcoind
+      dockerfile: Dockerfile
+    ports:
+      - "18443:18443"
+      - "8333:8333"
+      - "8332:8332"
+      - "18333:18333"
+      - "18332:18332"
+      - "18444:18444"
+    env_file:
+      - ./backend/bitcoind/.env
+    volumes:
+      - ./backend/bitcoind/.bitcoin/bitcoin.conf:/home/bitcoin/volume/.bitcoin/bitcoin.conf
+    networks:
+      bridgednet:
+        ipv4_address: 192.168.10.3
+
+  nodejs:
+    container_name: nodejs
+    build: 
+      context: ./backend/nodejs
+      dockerfile: Dockerfile
+    networks:
+      bridgednet:
+        ipv4_address: 192.168.10.4
+
+  mongodb:
+    container_name: mongodb
+    image: 'mongo'
+    environment:
+      - MONGO_INITDB_DATABASE=userInfo
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=secret
+    volumes:
+      - ./backend/mongodb/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+      - ./mongo-volume:/data/MONGO_INITDB_DATABASE
+    ports:
+      - '27017-27019: 27017-27019'
+    networks:
+      bridgednet:
+        ipv4_address: 192.168.10.5
+
+  react:
+    container_name: react
+    build: 
+      context: ./frontend/react-app
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    networks:
+      bridgednet:
+        ipv4_address: 192.168.10.6
+
+  nginx:
+    container_name: nginx
+    build:
+      context: ./frontend/nginx
+      dockerfile: Dockerfile
+
+networks:
+  bridgednet:
+    driver: bridge
+    ipam:
+     config:
+       - subnet: 192.168.10.0/24
