@@ -1,0 +1,182 @@
+.main__chatlist {
+    padding: 0 0px 0 0px;
+    grid-column-start: 1;
+      grid-column-end: 4;
+      grid-row-start: 1;
+      grid-row-end: 1;
+      height: 26rem;
+      overflow-y: hidden;
+    justify-content: center;
+  }
+  .chatlist__heading {
+    align-items: center;
+  }
+  .btn-nobg {
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 10px;
+    color: #dad9dd;
+    outline: none;
+  }
+  .search_wrap input {
+    background-color: transparent;
+    border: none;
+    padding: 15px 15px;
+    outline: none;
+    width: 80%;
+    padding-right: 0;
+  }
+  .search-btn {
+    height: 46px;
+    border: none;
+    background-color: transparent;
+    outline: none;
+    width: 20%;
+    cursor: pointer;
+    font-size: 20px;
+  }
+  .chatlist__items {
+    overflow: auto;
+    max-height: calc(100vh - calc(100vh / 2));
+    padding-right: 2rem;
+  }
+
+  .chatlist__items::-webkit-scrollbar {
+    width: 6px;               /* width of the entire scrollbar */
+  }
+  
+  .chatlist__items::-webkit-scrollbar-track {
+    background: transparent;        /* color of the tracking area */
+  }
+  
+  .chatlist__items::-webkit-scrollbar-thumb {
+    background-color: #b9bec4;
+    border-radius: 20px;       /* roundness of the scroll thumb */
+    border: none;  /* creates padding around scroll thumb */
+  }
+
+  .chatlist__items::-webkit-scrollbar-thumb:active { 
+    background-color: #2196f3;    /* color of the scroll thumb */
+} 
+  
+  .chatlist__item {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding-bottom: 10px;
+    margin-top: 10px;
+    cursor: pointer;
+    padding: 10px 10px 10px 20px;
+    transition: all 0.3s cubic-bezier(0.88, 0.19, 0.37, 1.11);
+    transform: scale(0);
+    animation-name: showIn;
+    animation-duration: 0.2s; /* or: Xms */
+    animation-iteration-count: 1;
+    animation-direction: normal; /* or: normal */
+    animation-timing-function: cubic-bezier(
+      0.88,
+      0.19,
+      0.37,
+      1.11
+    ); /* or: ease, ease-in, ease-in-out, linear, cubic-bezier(x1, y1, x2, y2) */
+    animation-fill-mode: both; /* or: backwards, both, none */
+    animation-delay: 0.1s; /* or: Xms */
+    background-color: var(--color-white);
+    box-shadow: var(--box-shadow);
+    border-radius: var(--border-radius-1);
+  }
+  @keyframes showIn {
+    0% {
+      transform: scale(0);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+  .chatlist__item:first-child {
+    margin-top: 0;
+  }
+  .avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+  
+    margin-right: 20px;
+    position: relative;
+  }
+  .avatar img {
+    max-width: 100%;
+    object-fit: cover;
+  }
+
+  .chatlist__item .userMeta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  
+  .chatlist__item .userMeta p {
+    margin: 0;
+    padding: 0;
+    color: var(--color-dark);
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .chatlist__item .userMeta span {
+    margin: 0;
+    padding: 0;
+    color: #ceccd3;
+    font-weight: 400;
+    font-size: 12px;
+    display: block;
+  }
+  .chatlist__item:hover,
+  .chatlist__item.active {
+    background: var(--color-white);
+    box-shadow: none;
+  }
+  .isOnline {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    background-color: transparent;
+    border-radius: 50%;
+    border: 2px solid transparent;
+  }
+  .isOnline.active {
+    background-color: transparent; 
+  }
+  .avatar-img {
+    overflow: hidden;
+    border-radius: 50%;
+    width: 100%;
+    height: 100%;
+  }
+
+  @media screen and (max-width:1200px) {
+
+    .main__chatlist {
+      grid-column-start: 0;
+        grid-column-end: 1;
+        grid-row-start: 1;
+        grid-row-end: 2;
+    }
+  }
+
+  @media screen and (max-width: 768px) {
+
+    .main__chatlist {
+      justify-self: center;
+      grid-column-start: 1;
+        grid-column-end: 2;
+        grid-row-start: 1;
+        grid-row-end: 2;
+    }
+  }

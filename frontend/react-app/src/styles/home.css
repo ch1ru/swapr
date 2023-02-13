@@ -1,0 +1,11 @@
+.homescreen {
+    display: flex;
+}
+
+.sidebar {
+    max-width: 25vw;
+}
+
+.messages {
+
+}
