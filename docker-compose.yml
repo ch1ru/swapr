@@ -10,7 +10,7 @@ services:
       - "8080:8080"
     networks:
       bridgednet:
-        ipv4_address: 192.168.10.2
+        ipv4_address: 192.168.20.2
 
   bitcoind:
     container_name: bitcoind
@@ -30,7 +30,7 @@ services:
       - ./backend/bitcoind/.bitcoin/bitcoin.conf:/home/bitcoin/volume/.bitcoin/bitcoin.conf
     networks:
       bridgednet:
-        ipv4_address: 192.168.10.3
+        ipv4_address: 192.168.20.3
 
   nodejs:
     container_name: nodejs
@@ -39,7 +39,7 @@ services:
       dockerfile: Dockerfile
     networks:
       bridgednet:
-        ipv4_address: 192.168.10.4
+        ipv4_address: 192.168.20.4
 
   mongodb:
     container_name: mongodb
@@ -52,10 +52,10 @@ services:
       - ./backend/mongodb/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
       - ./mongo-volume:/data/MONGO_INITDB_DATABASE
     ports:
-      - '27017-27019: 27017-27019'
+      - '27017-27019:27017-27019'
     networks:
       bridgednet:
-        ipv4_address: 192.168.10.5
+        ipv4_address: 192.168.20.5
 
   react:
     container_name: react
@@ -66,7 +66,7 @@ services:
       - "3000:3000"
     networks:
       bridgednet:
-        ipv4_address: 192.168.10.6
+        ipv4_address: 192.168.20.6
 
   nginx:
     container_name: nginx
@@ -79,4 +79,4 @@ networks:
     driver: bridge
     ipam:
      config:
-       - subnet: 192.168.10.0/24
+       - subnet: 192.168.20.0/24
