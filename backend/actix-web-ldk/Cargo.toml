@@ -1,5 +1,5 @@
 [package]
-name = "ldk-sample"
+name = "actix-web-ldk"
 version = "0.1.0"
 authors = ["Valentine Wallace <vwallace@protonmail.com>"]
 license = "MIT OR Apache-2.0"
@@ -28,10 +28,9 @@ chrono = "0.4"
 rand = "0.4"
 serde_json = { version = "1.0" }
 tokio = { version = "1", features = [ "io-util", "macros", "rt", "rt-multi-thread", "sync", "net", "time" ] }
-
-# actix
-actix-web = "2.0.0"
-actix-rt = "1.1.1"
+actix-web = "^4"
+actix-rt = "2.8.0"
+actix-cors = "0.6.4"
 
 [profile.release]
 panic = "abort"

@@ -1,2 +1,7 @@
-target/
 Dockerfile
+.dockerignore
+./target
+./test_data
+./workflows
+LICENSE*
+README.md

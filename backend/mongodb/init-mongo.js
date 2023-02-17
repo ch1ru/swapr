@@ -1,20 +1,13 @@
-// Create user
-dbAdmin = db.getSiblingDB("admin");
-dbAdmin.createUser({
-  user: "customerUser",
-  pwd: "password",
-  roles: [{ role: "userAdminAnyDatabase", db: "admin" }],
-  mechanisms: ["SCRAM-SHA-1"],
+db.createUser({
+  user: 'admin',
+  pwd: 'secret',
+  roles: [
+    {
+      role: 'readWrite',
+      db: 'userdb',
+    },
+  ],
 });
-
-// Authenticate user
-dbAdmin.auth({
-  user: "customerUser",
-  pwd: "password",
-  mechanisms: ["SCRAM-SHA-1"],
-  digestPassword: true,
-});
-
-// Create DB and collection
-db = new Mongo().getDB("customer");
-db.createCollection("customer_transaction", { capped: false });
+db = new Mongo().getDB("userdb");
+console.log("new db");
+db.createCollection('users', { capped: false });

@@ -58,4 +58,4 @@ EXPOSE 8332 8333 18332 18333 18443 18444 38333 38332
 
 #ENTRYPOINT ["/entrypoint.sh"]
 
-CMD bitcoind -printtoconsole -regtest -server -rpcallowip=0.0.0.0/0 -rpcuser=${RPCUSER} -rpcpassword=${RPCPASSWORD} -rpcport=18443 -rpcbind=172.16.5.4:18443 -rest
+CMD bitcoind -printtoconsole -regtest -server -rpcallowip=0.0.0.0/0 -rpcuser=${RPCUSER} -rpcpassword=${RPCPASSWORD} -rpcport=18443 -rpcbind=192.168.20.3:18443 -rest

@@ -7,6 +7,7 @@ import { options } from './config/cors/options'
 import ip from 'ip';
 import peerRoutes from './routes/peers.routes';
 import registerRoutes from './routes/register.routes';
+import userRoutes from './routes/user.routes';
 
 const cookieParser = require('cookie-parser');
 const bodyParser = require("body-parser");
@@ -44,14 +45,18 @@ export class App {
     private routes(): void {
         this.app.use("/peers", peerRoutes);
         this.app.use("/register", registerRoutes);
+        this.app.use("/users", userRoutes)
         this.app.all('*', (_: Request, res: Response)=> res.status(Code.NOT_FOUND).send(new HttpResponse(Code.NOT_FOUND, Status.NOT_FOUND, this.ROUTE_NOT_FOUND)));
     }
 
     private connectDB(): void {
         //connect to mongodb
+        console.log(process.env.USER);
+        console.log(process.env.PASS);
         mongoose.connect(
-            'mongodb://mongo:27017/userdb',
-            { useNewUrlParser: true }
+            `mongodb://mongo:27017/${process.env.DB_NAME}`, {
+            useNewUrlParser: true
+            }
         )
         .then(() => console.log('MongoDB Connected'))
         .catch((err: unknown) => console.log(err));

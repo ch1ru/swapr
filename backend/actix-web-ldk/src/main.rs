@@ -55,6 +55,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime};
 
+use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
+
 pub(crate) enum HTLCStatus {
 	Pending,
 	Succeeded,
@@ -357,6 +359,8 @@ async fn handle_ldk_events(
 		}
 	}
 }
+
+
 
 async fn start_ldk() {
 	let args = match args::parse_startup_args() {
@@ -751,6 +755,7 @@ async fn start_ldk() {
 	}
 
 	// Start the CLI.
+	/*
 	cli::poll_for_user_input(
 		Arc::clone(&invoice_payer),
 		Arc::clone(&peer_manager),
@@ -765,6 +770,10 @@ async fn start_ldk() {
 		Arc::clone(&logger),
 	)
 	.await;
+	*/
+
+	println!("Starting Actix web server");
+	start_web_server().await;
 
 	// Disconnect our peers and stop accepting new connections. This ensures we don't continue
 	// updating our channel data after we've stopped the background processor.
@@ -801,4 +810,28 @@ pub async fn main() {
 	}
 
 	start_ldk().await;
+}
+
+
+
+async fn start_web_server() -> std::io::Result<()> {
+	HttpServer::new(|| {
+        App::new()
+            .service(hello)
+            .service(echo)
+    })
+    .bind(("127.0.0.1", 5000))?
+    .run()
+    .await
+}
+
+#[get("/")]
+async fn hello() -> impl Responder {
+	println!("Received hello");
+    HttpResponse::Ok().body("Hello world!")
+}
+
+#[post("/echo")]
+async fn echo(req_body: String) -> impl Responder {
+    HttpResponse::Ok().body(req_body)
 }

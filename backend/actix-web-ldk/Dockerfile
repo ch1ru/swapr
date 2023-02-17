@@ -1,41 +1,10 @@
-# Source: https://blog.logrocket.com/packaging-a-rust-web-service-using-docker/
+FROM rust:1.67 as builder
+WORKDIR /usr/src/actix-web-ldk
+COPY . .
+RUN cargo install --path .
 
-FROM ekidd/rust-musl-builder:stable as builder
-
-RUN USER=root cargo new --bin actix-web-docker-example
-WORKDIR ./actix-web-docker-example
-COPY ./Cargo.lock ./Cargo.lock
-COPY ./Cargo.toml ./Cargo.toml
-RUN cargo build --release
-RUN rm src/*.rs
-
-ADD . ./
-
-RUN rm ./target/x86_64-unknown-linux-musl/release/deps/actix_web_docker_example*
-RUN cargo build --release
-
-
-FROM alpine:latest
-
-ARG APP=/usr/src/app
-
+FROM debian:bullseye-slim
+RUN apt-get update && rm -rf /var/lib/apt/lists/*
+COPY --from=builder /usr/local/cargo/bin/actix-web-ldk /usr/local/bin/actix-web-ldk
 EXPOSE 5000
-
-ENV TZ=Etc/UTC \
-    APP_USER=appuser
-
-RUN addgroup -S $APP_USER \
-    && adduser -S -g $APP_USER $APP_USER
-
-RUN apk update \
-    && apk add --no-cache ca-certificates tzdata \
-    && rm -rf /var/cache/apk/*
-
-COPY --from=builder /home/rust/src/actix-web-docker-example/target/x86_64-unknown-linux-musl/release/actix-web-docker-example ${APP}/actix-web-docker-example
-
-RUN chown -R $APP_USER:$APP_USER ${APP}
-
-USER $APP_USER
-WORKDIR ${APP}
-
-CMD ["./actix-web-docker-example"]
+CMD ["actix-web-ldk", "polaruser:polarpass@192.168.20.3:18443", "./", "9732", "regtest", "hellolightning", "0.0.0.0"]

@@ -1,13 +1,16 @@
 version: "3.9"
 services:
-  actix-web:
+  actix-web-ldk:
     build: 
-      context: ./backend/actix-web
+      context: ./backend/actix-web-ldk
       dockerfile: Dockerfile
-    container_name: actix-web
+    container_name: actix-web-ldk
     restart: unless-stopped
     ports:
       - "5000:5000"
+      - "9732:9732"
+    depends_on:
+      - bitcoind
     networks:
       bridgednet:
         ipv4_address: 192.168.20.2
@@ -39,6 +42,8 @@ services:
       dockerfile: Dockerfile
     env_file:
       - ./backend/nodejs/.env
+    ports:
+      - "4000:4000"
     depends_on:
       - mongo
     networks:
@@ -50,10 +55,8 @@ services:
     image: mongo:latest
     environment:
       - MONGO_INITDB_DATABASE=userdb
-      - MONGO_INITDB_ROOT_USERNAME=root
-      - MONGO_INITDB_ROOT_PASSWORD=secret
     volumes:
-      - ./backend/mongodb/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+      - ./backend/mongodb/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js
       - ./mongo-volume:/data/MONGO_INITDB_DATABASE
       - mongo_db:/data/db
     ports:
