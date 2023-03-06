@@ -76,11 +76,29 @@ services:
       bridgednet:
         ipv4_address: 192.168.20.6
 
+  postgres:
+    image: postgres:14
+    container_name: postgresql
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=postgres
+    ports:
+      - "5243:5243"
+    volumes:
+      - ./postgres-volume:/var/lib/postgresql/data
+    networks:
+      bridgednet:
+        ipv4_address: 192.168.20.7
+
   nginx:
     container_name: nginx
     build:
       context: ./frontend/nginx
       dockerfile: Dockerfile
+    networks:
+      bridgednet:
+        ipv4_address: 192.168.20.8
 
 networks:
   bridgednet:

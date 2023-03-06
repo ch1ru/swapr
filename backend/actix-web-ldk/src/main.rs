@@ -5,6 +5,7 @@ mod convert;
 mod disk;
 mod hex_utils;
 
+use postgres::{Client, Error, NoTls};
 use crate::bitcoind_client::BitcoindClient;
 use crate::disk::FilesystemLogger;
 use bitcoin::blockdata::constants::genesis_block;
@@ -13,23 +14,29 @@ use bitcoin::consensus::encode;
 use bitcoin::network::constants::Network;
 use bitcoin::secp256k1::Secp256k1;
 use bitcoin::BlockHash;
+use bitcoin::secp256k1::PublicKey;
 use bitcoin_bech32::WitnessProgram;
+use bitcoin::hashes::Hash;
+use bitcoin::hashes::sha256::Hash as Sha256;
 use lightning::chain;
+use serde::Serialize;
+use lightning::util::events::EventHandler;
 use lightning::chain::chaininterface::{BroadcasterInterface, ConfirmationTarget, FeeEstimator};
 use lightning::chain::keysinterface::{InMemorySigner, KeysInterface, KeysManager, Recipient};
+use lightning::util::config::{ChannelHandshakeConfig, ChannelHandshakeLimits, UserConfig};
 use lightning::chain::{chainmonitor, ChannelMonitorUpdateStatus};
 use lightning::chain::{Filter, Watch};
 use lightning::ln::channelmanager;
 use lightning::ln::channelmanager::{
 	ChainParameters, ChannelManagerReadArgs, SimpleArcChannelManager,
 };
+use serde_json::json;
 use lightning::ln::peer_handler::{IgnoringMessageHandler, MessageHandler, SimpleArcPeerManager};
 use lightning::ln::{PaymentHash, PaymentPreimage, PaymentSecret};
 use lightning::onion_message::SimpleArcOnionMessenger;
 use lightning::routing::gossip;
 use lightning::routing::gossip::{NodeId, P2PGossipSync};
 use lightning::routing::scoring::ProbabilisticScorer;
-use lightning::util::config::UserConfig;
 use lightning::util::events::{Event, PaymentPurpose};
 use lightning::util::ser::ReadableArgs;
 use lightning_background_processor::{BackgroundProcessor, GossipSync};
@@ -40,6 +47,7 @@ use lightning_block_sync::UnboundedCache;
 use lightning_invoice::payment;
 use lightning_invoice::utils::DefaultRouter;
 use lightning_net_tokio::SocketDescriptor;
+use std::net::{SocketAddr, ToSocketAddrs};
 use lightning_persister::FilesystemPersister;
 use rand::{thread_rng, Rng};
 use std::collections::hash_map::Entry;
@@ -55,7 +63,12 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime};
 
-use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
+use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder, Result};
+
+#[derive(Serialize)]
+struct ErrorResponse {
+    error: String,
+}
 
 pub(crate) enum HTLCStatus {
 	Pending,
@@ -116,6 +129,12 @@ type Router = DefaultRouter<
 pub(crate) type NetworkGraph = gossip::NetworkGraph<Arc<FilesystemLogger>>;
 
 type OnionMessenger = SimpleArcOnionMessenger<FilesystemLogger>;
+
+struct AppState {
+	channel_manager: Arc<ChannelManager>,
+	peer_manager: Arc<PeerManager>,
+	keys_manager: Arc<KeysManager>,
+}
 
 async fn handle_ldk_events(
 	channel_manager: &Arc<ChannelManager>, bitcoind_client: &BitcoindClient,
@@ -754,6 +773,7 @@ async fn start_ldk() {
 		});
 	}
 
+
 	// Start the CLI.
 	/*
 	cli::poll_for_user_input(
@@ -772,8 +792,10 @@ async fn start_ldk() {
 	.await;
 	*/
 
+	
+
 	println!("Starting Actix web server");
-	start_web_server().await;
+	start_web_server(Arc::clone(&channel_manager), Arc::clone(&peer_manager), Arc::clone(&keys_manager)).await;
 
 	// Disconnect our peers and stop accepting new connections. This ensures we don't continue
 	// updating our channel data after we've stopped the background processor.
@@ -812,22 +834,27 @@ pub async fn main() {
 	start_ldk().await;
 }
 
-
-
-async fn start_web_server() -> std::io::Result<()> {
-	HttpServer::new(|| {
+async fn start_web_server(channel_man: Arc<ChannelManager>, peer_man: Arc<PeerManager>, keys_man: Arc<KeysManager>) -> std::io::Result<()> {
+	HttpServer::new(move || {
         App::new()
+			.app_data(web::Data::new(AppState {
+				channel_manager: Arc::clone(&channel_man),
+				peer_manager: Arc::clone(&peer_man),
+				keys_manager: Arc::clone(&keys_man),
+			}))
             .service(hello)
             .service(echo)
+			.service(connect_peer_if_necessary)
+			.service(open_channel)
+			.service(initialize)
     })
     .bind(("127.0.0.1", 5000))?
     .run()
     .await
 }
 
-#[get("/")]
-async fn hello() -> impl Responder {
-	println!("Received hello");
+#[get("/hello")]
+async fn hello(data: web::Data<AppState>) -> impl Responder {
     HttpResponse::Ok().body("Hello world!")
 }
 
@@ -835,3 +862,198 @@ async fn hello() -> impl Responder {
 async fn echo(req_body: String) -> impl Responder {
     HttpResponse::Ok().body(req_body)
 }
+
+#[post("/init")]
+async fn initialize(req_body: String) -> String {
+	//init db
+	let mut client = Client::connect(
+		"postgres://admin:password@localhost:5243/postgres", NoTls,
+	); //TODO: properly implement
+	//create payments table
+	client.batch_execute(
+		"CREATE TABLE IF NOT EXISTS Payments(id SERIAL PRIMARY KEY, message VARCHAR, amount_sat INT NOT NULL)" 
+	);
+
+	String::from("ok")
+}
+
+#[post("/connectpeer")]
+pub(crate) async fn connect_peer_if_necessary(
+	data: web::Data<AppState>
+) -> String  {
+	let mut client = Client::connect(
+		"localhost://admin:password@192.168.20.7:5243/postgres", NoTls,
+	);
+	let peer_pubkey_and_ip_addr = "026b8aa12030218145515d3816919ac6d44033bead55f22588657962a6bea71905@127.0.0.1:9735";
+	let (pubkey, peer_addr) = match cli::parse_peer_info(peer_pubkey_and_ip_addr.to_string()) {
+			Ok(info) => info,
+			Err(e) => {
+				println!("{:?}", e.into_inner().unwrap());
+				return String::from("error");
+			}
+		};
+
+	let peer_manager = &data.peer_manager;
+	for node_pubkey in peer_manager.get_peer_node_ids() {
+		if node_pubkey == pubkey {
+			println!("Already connected to peer");
+		}
+	}
+
+	let res = do_connect_peer(pubkey, peer_addr, Arc::clone(&peer_manager)).await;
+	if res.is_err() {
+		println!("There was an error");
+	}
+
+
+	String::from("Connected to peer")
+}
+
+pub(crate) async fn do_connect_peer(
+	pubkey: PublicKey, peer_addr: SocketAddr, peer_manager: Arc<PeerManager>,
+) -> Result<(), ()> {
+	match lightning_net_tokio::connect_outbound(Arc::clone(&peer_manager), pubkey, peer_addr).await
+	{
+		Some(connection_closed_future) => {
+			let mut connection_closed_future = Box::pin(connection_closed_future);
+			loop {
+				match futures::poll!(&mut connection_closed_future) {
+					std::task::Poll::Ready(_) => {
+						return Err(());
+					}
+					std::task::Poll::Pending => {}
+				}
+				// Avoid blocking the tokio context by sleeping a bit
+				match peer_manager.get_peer_node_ids().iter().find(|id| **id == pubkey) {
+					Some(_) => return Ok(()),
+					None => tokio::time::sleep(Duration::from_millis(10)).await,
+				}
+			}
+		}
+		None => Err(()),
+	}
+}
+
+#[post("/openchannel")]
+async fn open_channel(
+	data: web::Data<AppState>
+) -> String {
+	let channel_manager = &data.channel_manager;
+	let channel_amt_sat: u64 = 50000;
+	let announced_channel = false;
+	let peer_pubkey_and_ip_addr = "026b8aa12030218145515d3816919ac6d44033bead55f22588657962a6bea71905@127.0.0.1:9735";
+	let (pubkey, peer_addr) = match cli::parse_peer_info(peer_pubkey_and_ip_addr.to_string()) {
+			Ok(info) => info,
+			Err(e) => {
+				println!("{:?}", e.into_inner().unwrap());
+				return String::from("error");
+			}
+		};
+	let config = UserConfig {
+		channel_handshake_limits: ChannelHandshakeLimits {
+			// lnd's max to_self_delay is 2016, so we want to be compatible.
+			their_to_self_delay: 2016,
+			..Default::default()
+		},
+		channel_handshake_config: ChannelHandshakeConfig {
+			announced_channel,
+			..Default::default()
+		},
+		..Default::default()
+	};
+
+	let obj = match channel_manager.create_channel(pubkey, channel_amt_sat, 0, 0, Some(config)) {
+		Ok(_) => {
+			println!("EVENT: Initiated channel with peer {}. ", pubkey);
+			let channel_json = json!({
+				"peer_pubkey": pubkey.to_string(),
+				"amount": channel_amt_sat,
+				"public": announced_channel
+			});
+			Ok(channel_json)
+		}
+		Err(e) => {
+			println!("ERROR: {:?}", e);
+			Err("Failed to open channel".to_string())
+		}
+	};
+
+	return String::from("opened channel");
+}
+
+fn list_peers(peer_manager: Arc<PeerManager>) -> Result<serde_json::value::Value, ()> {
+	let mut peers: Vec<String> = Vec::new();
+	for peer in peer_manager.get_peer_node_ids() {
+		peers.push(peer.to_string());
+	}
+	let list_peers = json!({ "peers": peers });
+
+	Ok(list_peers)
+}
+
+/*
+#[post("/keysend")]
+async fn keysend<E: EventHandler>(
+	data: web::Data<AppState>
+) -> String {
+	let keys_manager = &data.keys_manager;
+	let invoice_payer = &data.invoice_payer;
+	let payment_storage = &data.outbound_payments;
+	let payment_preimage = keys_manager.get_secure_random_bytes();
+	let amt_msat: u64 = 50000;
+	let peer_pubkey_and_ip_addr = "026b8aa12030218145515d3816919ac6d44033bead55f22588657962a6bea71905@127.0.0.1:9735";
+	let (payee_pubkey, peer_addr) = match cli::parse_peer_info(peer_pubkey_and_ip_addr.to_string()) {
+		Ok(info) => info,
+		Err(e) => {
+			println!("{:?}", e.into_inner().unwrap());
+			return String::from("error");
+		}
+	};
+	let status = match invoice_payer.pay_pubkey(
+		payee_pubkey,
+		PaymentPreimage(payment_preimage),
+		amt_msat,
+		40,
+	) {
+		Ok(_payment_id) => {
+			println!("EVENT: initiated sending {} msats to {}", amt_msat, payee_pubkey);
+			print!("> ");
+			return String::from("failed");
+		}
+		Err(PaymentError::Invoice(e)) => {
+			return String::from("failed");
+		}
+		Err(PaymentError::Routing(e)) => {
+			return String::from("failed");
+		}
+		Err(PaymentError::Sending(e)) => {
+			println!("{:?}", e);
+			return String::from("failed");
+		}
+	};
+	let payment_successful = match status {
+		HTLCStatus::Succeeded | HTLCStatus::Pending => true,
+		HTLCStatus::Failed => false,
+	};
+	let mut payments = payment_storage.lock().unwrap();
+	payments.insert(
+		PaymentHash(Sha256::hash(&payment_preimage).into_inner()),
+		PaymentInfo {
+			preimage: None,
+			secret: None,
+			status,
+			amt_msat: MillisatAmount(Some(amt_msat)),
+		},
+	);
+	let payment_json = json!({
+		"payee_pubkey": payee_pubkey.to_string(),
+		"amount_msat": amt_msat
+	});
+
+	if !payment_successful {
+		return String::from("failed");
+	}
+
+	String::from("ok")
+}
+*/
