@@ -8,6 +8,7 @@ import ip from 'ip';
 import peerRoutes from './routes/peers.routes';
 import registerRoutes from './routes/register.routes';
 import userRoutes from './routes/user.routes';
+import chatGPTRoutes from './routes/chatGPT.routes';
 
 const cookieParser = require('cookie-parser');
 const bodyParser = require("body-parser");
@@ -46,6 +47,7 @@ export class App {
         this.app.use("/peers", peerRoutes);
         this.app.use("/register", registerRoutes);
         this.app.use("/users", userRoutes)
+        this.app.use("/chatgpt", chatGPTRoutes);
         this.app.all('*', (_: Request, res: Response)=> res.status(Code.NOT_FOUND).send(new HttpResponse(Code.NOT_FOUND, Status.NOT_FOUND, this.ROUTE_NOT_FOUND)));
     }
 

@@ -1,12 +1,14 @@
 import React, { Component, useState, createRef, useEffect } from "react";
-
 import "./ChatContent.css";
+import { axiosPublic } from "../../api/config.js"
 import Avatar from "../chatlist/Avatar";
 import ChatItem from "./ChatItem";
 import { FaCog, FaPaperPlane, FaPlus } from "react-icons/fa";
+var CryptoJS = require("crypto-js");
 
 export default class ChatContent extends Component {
   messagesEndRef = createRef(null);
+  
   chatItms = [
     {
       key: 1,
@@ -72,28 +74,45 @@ export default class ChatContent extends Component {
   };
 
   componentDidMount() {
-    window.addEventListener("keydown", (e) => {
-      if (e.keyCode == 13) {
-        if (this.state.msg != "") {
-          this.chatItms.push({
-            key: this.state.chat.length + 1,
-            type: "",
-            msg: this.state.msg,
-            image:
-              "https://pbs.twimg.com/profile_images/1116431270697766912/-NfnQHvh_400x400.jpg",
-          });
-          this.setState({ chat: [...this.chatItms] });
-          this.setState({ msg: "" });
-        }
-        this.scrollToBottom();
-      }
-    });
-    
+
     this.scrollToBottom();
   }
   onStateChange = (e) => {
     this.setState({ msg: e.target.value });
+    this.scrollToBottom();
   };
+  handleSendMessage = async () => {
+    var ciphertext = CryptoJS.AES.encrypt(JSON.stringify(this.state.msg), 'secret key 123').toString();
+    // Decrypt
+    //var bytes  = CryptoJS.AES.decrypt(ciphertext, 'secret key 123');
+    //var decryptedData = JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
+    if (this.state.msg != "") {
+      this.chatItms.push({
+        key: this.state.chat.length + 1,
+        type: "",
+        msg: this.state.msg,
+        image:
+          "https://pbs.twimg.com/profile_images/1116431270697766912/-NfnQHvh_400x400.jpg",
+      });
+
+      let response = await axiosPublic.post(`nodeapi/chatgpt`, {message: this.state.msg});
+
+      let htlc = await axiosPublic.post(`ldk/sendmessage`, {pubkey: "", amount: 100, message: this.state.msg});
+
+      this.chatItms.push({
+        key: this.state.chat.length + 1,
+        type: "other",
+        msg: response.data.data.reply,
+        image:
+          "https://pbs.twimg.com/profile_images/1116431270697766912/-NfnQHvh_400x400.jpg",
+      });
+      
+      this.setState({ chat: [...this.chatItms] });
+      this.setState({ msg: "" });
+      
+    }
+    this.scrollToBottom();
+  }
 
   render() {
     return (
@@ -144,7 +163,7 @@ export default class ChatContent extends Component {
               onChange={this.onStateChange}
               value={this.state.msg}
             />
-            <button className="btnSendMsg" id="sendMsgBtn">
+            <button className="btnSendMsg" id="sendMsgBtn" onClick={this.handleSendMessage}>
               <i><FaPaperPlane /></i>
             </button>
           </div>

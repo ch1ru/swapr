@@ -221,6 +221,16 @@ impl BitcoindClient {
 		Address::from_str(addr.0.as_str()).unwrap()
 	}
 
+	pub async fn get_new_address_str(&self) -> String {
+		let addr_args = vec![serde_json::json!("LDK output address")];
+		let addr = self
+			.bitcoind_rpc_client
+			.call_method::<NewAddress>("getnewaddress", &addr_args)
+			.await
+			.unwrap();
+		return String::from(addr.0.as_str());
+	}
+
 	pub async fn get_blockchain_info(&self) -> BlockchainInfo {
 		self.bitcoind_rpc_client
 			.call_method::<BlockchainInfo>("getblockchaininfo", &vec![])

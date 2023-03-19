@@ -7,8 +7,8 @@ services:
     container_name: actix-web-ldk
     restart: unless-stopped
     ports:
-      - "5000:5000"
       - "9732:9732"
+      - "5000:5000"
     depends_on:
       - bitcoind
     networks:
@@ -70,6 +70,8 @@ services:
     build: 
       context: ./frontend/react-app
       dockerfile: Dockerfile
+    env_file:
+      - ./frontend/react-app/.env
     ports:
       - "3000:3000"
     networks:
@@ -96,6 +98,8 @@ services:
     build:
       context: ./frontend/nginx
       dockerfile: Dockerfile
+    ports:
+      - "80:80"
     networks:
       bridgednet:
         ipv4_address: 192.168.20.8

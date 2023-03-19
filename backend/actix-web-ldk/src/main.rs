@@ -134,6 +134,7 @@ struct AppState {
 	channel_manager: Arc<ChannelManager>,
 	peer_manager: Arc<PeerManager>,
 	keys_manager: Arc<KeysManager>,
+	bitcoind_client: Arc<BitcoindClient>
 }
 
 async fn handle_ldk_events(
@@ -795,7 +796,7 @@ async fn start_ldk() {
 	
 
 	println!("Starting Actix web server");
-	start_web_server(Arc::clone(&channel_manager), Arc::clone(&peer_manager), Arc::clone(&keys_manager)).await;
+	start_web_server(Arc::clone(&channel_manager), Arc::clone(&peer_manager), Arc::clone(&keys_manager), Arc::clone(&bitcoind_client)).await;
 
 	// Disconnect our peers and stop accepting new connections. This ensures we don't continue
 	// updating our channel data after we've stopped the background processor.
@@ -834,21 +835,24 @@ pub async fn main() {
 	start_ldk().await;
 }
 
-async fn start_web_server(channel_man: Arc<ChannelManager>, peer_man: Arc<PeerManager>, keys_man: Arc<KeysManager>) -> std::io::Result<()> {
+async fn start_web_server(channel_man: Arc<ChannelManager>, peer_man: Arc<PeerManager>, keys_man: Arc<KeysManager>, bitcoind_client: Arc<BitcoindClient>) -> std::io::Result<()> {
 	HttpServer::new(move || {
         App::new()
 			.app_data(web::Data::new(AppState {
 				channel_manager: Arc::clone(&channel_man),
 				peer_manager: Arc::clone(&peer_man),
 				keys_manager: Arc::clone(&keys_man),
+				bitcoind_client: Arc::clone(&bitcoind_client)
 			}))
             .service(hello)
             .service(echo)
+			.service(send_message)
 			.service(connect_peer_if_necessary)
 			.service(open_channel)
 			.service(initialize)
+			.service(get_new_addr)
     })
-    .bind(("127.0.0.1", 5000))?
+    .bind(("192.168.20.2", 5000))?
     .run()
     .await
 }
@@ -863,8 +867,14 @@ async fn echo(req_body: String) -> impl Responder {
     HttpResponse::Ok().body(req_body)
 }
 
+#[post("/sendmessage")]
+async fn send_message(req_body: String) -> impl Responder {
+	HttpResponse::Ok().body(req_body)
+}
+
 #[post("/init")]
 async fn initialize(req_body: String) -> String {
+	/*
 	//init db
 	let mut client = Client::connect(
 		"postgres://admin:password@localhost:5243/postgres", NoTls,
@@ -872,9 +882,16 @@ async fn initialize(req_body: String) -> String {
 	//create payments table
 	client.batch_execute(
 		"CREATE TABLE IF NOT EXISTS Payments(id SERIAL PRIMARY KEY, message VARCHAR, amount_sat INT NOT NULL)" 
-	);
+	);*/
 
 	String::from("ok")
+}
+
+#[get("/getnewaddress")]
+async fn get_new_addr(data: web::Data<AppState>) -> String {
+	let bitcoind_client = &data.bitcoind_client;
+	let addr = bitcoind_client.get_new_address_str();
+	addr.await
 }
 
 #[post("/connectpeer")]
@@ -990,6 +1007,8 @@ fn list_peers(peer_manager: Arc<PeerManager>) -> Result<serde_json::value::Value
 
 	Ok(list_peers)
 }
+
+
 
 /*
 #[post("/keysend")]
