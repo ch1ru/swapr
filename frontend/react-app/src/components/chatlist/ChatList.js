@@ -1,9 +1,25 @@
-import React, { Component } from "react";
+import React, { Component, useState } from "react";
 import "./chatList.css";
 import ChatListItems from "./ChatListItems";
+import { axiosPublic } from "../../api/config";
+import { useEffect } from "react";
 
-export default class ChatList extends Component {
-  allChatUsers = [
+export default function ChatList() {
+
+  const [allChats, setAllChats] = useState([]);
+
+  useEffect(() => {
+    const getUsers = async () => {
+      //call api
+      let response = await axiosPublic.get(`nodeapi/users`);
+      setAllChats(response.data.data);
+    }
+    
+    getUsers();
+  }, []);
+
+  /*
+  const allChatUsers = [
     {
       image:
         "https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTA78Na63ws7B7EAWYgTr9BxhX_Z8oLa1nvOA&usqp=CAU",
@@ -83,49 +99,41 @@ export default class ChatList extends Component {
       active: false,
       isOnline: true,
     },
-  ];
-  constructor(props) {
-    super(props);
-    this.state = {
-      allChats: this.allChatUsers,
-    };
-  }
-  render() {
-    return (
-      <div className="main__chatlist">
-        <button className="btn">
-          <i className="fa fa-plus"></i>
-          <span>New conversation</span>
+  ];*/
+  return (
+    <div className="main__chatlist">
+      <button className="btn">
+        <i className="fa fa-plus"></i>
+        <span>New conversation</span>
+      </button>
+      <div className="chatlist__heading">
+        <h2>Chats</h2>
+        <button className="btn-nobg">
+          <i className="fa fa-ellipsis-h"></i>
         </button>
-        <div className="chatlist__heading">
-          <h2>Chats</h2>
-          <button className="btn-nobg">
-            <i className="fa fa-ellipsis-h"></i>
+      </div>
+      <div className="chatList__search">
+        <div className="search_wrap">
+          <input type="text" placeholder="Search Here" required />
+          <button className="search-btn">
+            <i className="fa fa-search"></i>
           </button>
         </div>
-        <div className="chatList__search">
-          <div className="search_wrap">
-            <input type="text" placeholder="Search Here" required />
-            <button className="search-btn">
-              <i className="fa fa-search"></i>
-            </button>
-          </div>
-        </div>
-        <div className="chatlist__items">
-          {this.state.allChats.map((item, index) => {
-            return (
-              <ChatListItems
-                name={item.name}
-                key={item.id}
-                animationDelay={index + 1}
-                active={item.active ? "active" : ""}
-                isOnline={item.isOnline ? "active" : ""}
-                image={item.image}
-              />
-            );
-          })}
-        </div>
       </div>
-    );
-  }
+      <div className="chatlist__items">
+        {allChats.map((item, index) => {
+          return (
+            <ChatListItems
+              username={item.username}
+              key={item.id}
+              animationDelay={index + 1}
+              active={item.active ? "active" : ""}
+              isOnline={item.isOnline ? "active" : ""}
+              image={item.image}
+            />
+          );
+        })}
+      </div>
+    </div>
+  )
 }

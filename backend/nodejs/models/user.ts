@@ -4,7 +4,7 @@ const userSchema = new mongoose.Schema({
     pubkey: String,
     username: String,
     bio: String,
-    signature: String
+    avatar: String
 });
 
 const user = mongoose.model('users', userSchema);
