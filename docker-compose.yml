@@ -1,14 +1,15 @@
 version: "3.9"
 services:
-  actix-web-ldk:
+  sensei:
     build: 
-      context: ./backend/actix-web-ldk
+      context: ./backend/sensei
       dockerfile: Dockerfile
-    container_name: actix-web-ldk
+    container_name: sensei
     restart: unless-stopped
     ports:
       - "9732:9732"
       - "5000:5000"
+      - "5401:5401"
     depends_on:
       - bitcoind
     networks:
@@ -79,22 +80,22 @@ services:
         ipv4_address: 192.168.20.6
 
   postgres:
-    image: postgres:14
+    image: postgres
     container_name: postgresql
     environment:
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=postgres
+      - POSTGRES_USER=sensei
+      - POSTGRES_PASSWORD=sensei
+      - POSTGRES_DB=sensei
     ports:
-      - "5243:5243"
+      - "5432:5432"
     volumes:
-      - ./postgres-volume:/var/lib/postgresql/data
+      - sensei-pgdb:/var/lib/postgresql/data
     networks:
       bridgednet:
         ipv4_address: 192.168.20.7
 
-  nginx:
-    container_name: nginx
+  nginx_reverse_proxy:
+    container_name: nginx_reverse_proxy
     build:
       context: ./frontend/nginx
       dockerfile: Dockerfile
@@ -113,3 +114,5 @@ networks:
 
 volumes:
   mongo_db: {}
+  sensei-pgdb:
+  sensei-mysqldb:

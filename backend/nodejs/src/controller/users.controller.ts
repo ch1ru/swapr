@@ -44,3 +44,15 @@ export const locateUser = async (req: Request, res: Response): Promise<Response<
         .send(new HttpResponse(Code.INTERNAL_SERVER_ERROR, Status.INTERNAL_SERVER_ERROR, "Internal server error"));
     }
 }
+
+/*
+export const changeAccountDetails = async (req: Request, res: Response): Promise<Response<void>> => {
+    try {
+        const account = req.body.account;
+
+    }
+    catch(error: unknown) {
+
+    }
+}
+*/

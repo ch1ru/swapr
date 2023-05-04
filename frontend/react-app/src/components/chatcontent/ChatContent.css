@@ -3,6 +3,9 @@
     padding: 20px 40px;
     max-width: 63%;
     border-right: 1px solid #ebe7fb;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
   }
   .content__header {
     padding-bottom: 15px;
@@ -25,7 +28,8 @@
     color: #000;
   }
   .content__body {
-    max-height: calc(100vh - calc(100vh / 2));
+    padding-top: 10px;
+    padding-bottom: 10px;
     overflow: auto;
     padding-right: 20px;
   }
@@ -144,4 +148,9 @@
   #sendMsgBtn {
     background-color: #3b5bfe;
     color: #fff;
+  }
+  #sendTipBtn {
+    background-color: transparent;
+    margin-right: 10px;
+    color: gold;
   }

@@ -102,10 +102,6 @@ export default function ChatList() {
   ];*/
   return (
     <div className="main__chatlist">
-      <button className="btn">
-        <i className="fa fa-plus"></i>
-        <span>New conversation</span>
-      </button>
       <div className="chatlist__heading">
         <h2>Chats</h2>
         <button className="btn-nobg">

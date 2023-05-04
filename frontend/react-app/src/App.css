@@ -1,3 +1,5 @@
+
+
 * {
   box-sizing: border-box;
 }
@@ -16,13 +18,11 @@ body {
 }
 
 .__main {
-  max-width: 90%;
   margin: auto;
   background-color: #ffff;
-  min-height: 80vh;
+  min-height: 100vh;
+  max-width: 100vw;
   width: 100%;
-  border-radius: 10px;
-  padding: 20px;
   display: flex;
   padding-left: 0;
 }

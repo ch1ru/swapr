@@ -5,6 +5,8 @@ mod convert;
 mod disk;
 mod hex_utils;
 
+use actix_web::dev::Extensions;
+use actix_web::web::Json;
 use postgres::{Client, Error, NoTls};
 use crate::bitcoind_client::BitcoindClient;
 use crate::disk::FilesystemLogger;
@@ -19,7 +21,7 @@ use bitcoin_bech32::WitnessProgram;
 use bitcoin::hashes::Hash;
 use bitcoin::hashes::sha256::Hash as Sha256;
 use lightning::chain;
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use lightning::util::events::EventHandler;
 use lightning::chain::chaininterface::{BroadcasterInterface, ConfirmationTarget, FeeEstimator};
 use lightning::chain::keysinterface::{InMemorySigner, KeysInterface, KeysManager, Recipient};
@@ -44,10 +46,11 @@ use lightning_block_sync::init;
 use lightning_block_sync::poll;
 use lightning_block_sync::SpvClient;
 use lightning_block_sync::UnboundedCache;
-use lightning_invoice::payment;
+use lightning_invoice::payment::{self, PaymentError, InvoicePayerUsingTime};
 use lightning_invoice::utils::DefaultRouter;
 use lightning_net_tokio::SocketDescriptor;
 use std::net::{SocketAddr, ToSocketAddrs};
+use std::str::FromStr;
 use lightning_persister::FilesystemPersister;
 use rand::{thread_rng, Rng};
 use std::collections::hash_map::Entry;
@@ -94,6 +97,8 @@ pub(crate) struct PaymentInfo {
 	amt_msat: MillisatAmount,
 }
 
+static mut invoice_payer_static: Box<&str> = Box::from("j");
+
 pub(crate) type PaymentInfoStorage = Arc<Mutex<HashMap<PaymentHash, PaymentInfo>>>;
 
 type ChainMonitor = chainmonitor::ChainMonitor<
@@ -134,7 +139,9 @@ struct AppState {
 	channel_manager: Arc<ChannelManager>,
 	peer_manager: Arc<PeerManager>,
 	keys_manager: Arc<KeysManager>,
-	bitcoind_client: Arc<BitcoindClient>
+	bitcoind_client: Arc<BitcoindClient>,
+	inbound_payments: PaymentInfoStorage,
+	outbound_payments: PaymentInfoStorage
 }
 
 async fn handle_ldk_events(
@@ -379,8 +386,6 @@ async fn handle_ldk_events(
 		}
 	}
 }
-
-
 
 async fn start_ldk() {
 	let args = match args::parse_startup_args() {
@@ -796,7 +801,7 @@ async fn start_ldk() {
 	
 
 	println!("Starting Actix web server");
-	start_web_server(Arc::clone(&channel_manager), Arc::clone(&peer_manager), Arc::clone(&keys_manager), Arc::clone(&bitcoind_client)).await;
+	start_web_server(Arc::clone(&channel_manager), Arc::clone(&peer_manager), Arc::clone(&keys_manager), Arc::clone(&bitcoind_client), inbound_payments.clone(), outbound_payments.clone()).await;
 
 	// Disconnect our peers and stop accepting new connections. This ensures we don't continue
 	// updating our channel data after we've stopped the background processor.
@@ -835,14 +840,21 @@ pub async fn main() {
 	start_ldk().await;
 }
 
-async fn start_web_server(channel_man: Arc<ChannelManager>, peer_man: Arc<PeerManager>, keys_man: Arc<KeysManager>, bitcoind_client: Arc<BitcoindClient>) -> std::io::Result<()> {
+async fn start_web_server(
+	channel_man: Arc<ChannelManager>, 
+	peer_man: Arc<PeerManager>, keys_man: Arc<KeysManager>, 
+	bitcoind_client: Arc<BitcoindClient>, 
+	in_payments: PaymentInfoStorage, 
+	out_payments: PaymentInfoStorage) -> std::io::Result<()> {
 	HttpServer::new(move || {
         App::new()
 			.app_data(web::Data::new(AppState {
 				channel_manager: Arc::clone(&channel_man),
 				peer_manager: Arc::clone(&peer_man),
 				keys_manager: Arc::clone(&keys_man),
-				bitcoind_client: Arc::clone(&bitcoind_client)
+				bitcoind_client: Arc::clone(&bitcoind_client),
+				inbound_payments: in_payments.clone(),
+				outbound_payments: out_payments.clone()
 			}))
             .service(hello)
             .service(echo)
@@ -851,6 +863,7 @@ async fn start_web_server(channel_man: Arc<ChannelManager>, peer_man: Arc<PeerMa
 			.service(open_channel)
 			.service(initialize)
 			.service(get_new_addr)
+			.service(create_wallet)
     })
     .bind(("192.168.20.2", 5000))?
     .run()
@@ -867,9 +880,88 @@ async fn echo(req_body: String) -> impl Responder {
     HttpResponse::Ok().body(req_body)
 }
 
+#[derive(Deserialize, Serialize)] // <-- Note the Serialize for the json echo response
+struct PaymentRequest {
+    amt_msat: u64,
+	dest_pubkey: String,
+	message: String
+}
+
+type JsonPaymentReq = Json<PaymentRequest>;
+
 #[post("/sendmessage")]
-async fn send_message(req_body: String) -> impl Responder {
-	HttpResponse::Ok().body(req_body)
+async fn send_message(req_body: JsonPaymentReq, data: web::Data<AppState>) -> impl Responder {
+
+	println!("{}", req_body.message);
+	println!("{}", req_body.amt_msat);
+	println!("{}", req_body.dest_pubkey);
+
+	let keys_manager = data.keys_manager;
+
+	match keysend(
+		&*invoice_payer,
+		PublicKey::from_str(req_body.dest_pubkey.as_str()).unwrap(),
+		req_body.amt_msat,
+		&*keys_manager,
+		data.outbound_payments.clone(),
+	) {
+		Ok(_) => return HttpResponse::Ok().body("ok"),
+		Err(message) => return HttpResponse::Ok().body("error"),
+	};
+}
+
+fn keysend<E: EventHandler, K: KeysInterface>(
+	invoice_payer: &InvoicePayer<E>, payee_pubkey: PublicKey, amt_msat: u64, keys: &K, payment_storage: PaymentInfoStorage
+) -> Result<serde_json::value::Value, String> {
+	let payment_preimage = keys.get_secure_random_bytes();
+
+	let status = match invoice_payer.pay_pubkey(
+		payee_pubkey,
+		PaymentPreimage(payment_preimage),
+		amt_msat,
+		40,
+	) {
+		Ok(_payment_id) => {
+			println!("EVENT: initiated sending {} msats to {}", amt_msat, payee_pubkey);
+			print!("> ");
+			HTLCStatus::Pending
+		}
+		Err(PaymentError::Invoice(e)) => {
+			return Err(e.to_string());
+		}
+		Err(PaymentError::Routing(e)) => {
+			return Err(e.err);
+		}
+		Err(PaymentError::Sending(e)) => {
+			println!("{:?}", e);
+			HTLCStatus::Failed
+		}
+	};
+	let payment_successful = match status {
+		HTLCStatus::Succeeded | HTLCStatus::Pending => true,
+		HTLCStatus::Failed => false,
+	};
+	
+	let mut payments = payment_storage.lock().unwrap();
+	payments.insert(
+		PaymentHash(Sha256::hash(&payment_preimage).into_inner()),
+		PaymentInfo {
+			preimage: None,
+			secret: None,
+			status,
+			amt_msat: MillisatAmount(Some(amt_msat)),
+		},
+	);
+	let payment_json = json!({
+		"payee_pubkey": payee_pubkey.to_string(),
+		"amount_msat": amt_msat
+	});
+
+	if !payment_successful {
+		return Err("Failed to send payment".to_string());
+	}
+
+	Ok(payment_json)
 }
 
 #[post("/init")]
@@ -892,6 +984,13 @@ async fn get_new_addr(data: web::Data<AppState>) -> String {
 	let bitcoind_client = &data.bitcoind_client;
 	let addr = bitcoind_client.get_new_address_str();
 	addr.await
+}
+
+#[post("/createwallet")]
+async fn create_wallet(data: web::Data<AppState>) -> String {
+	let bitcoind_client = &data.bitcoind_client;
+	bitcoind_client.create_wallet();
+	return String::from("OK");
 }
 
 #[post("/connectpeer")]

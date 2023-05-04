@@ -211,6 +211,14 @@ impl BitcoindClient {
 			.unwrap()
 	}
 
+	pub async fn create_wallet(&self) {
+		let name = serde_json::json!(String::from("test"));
+		self.bitcoind_rpc_client
+			.call_method::<Txid>("createwallet", &vec![name])
+			.await
+			.unwrap();
+	}
+
 	pub async fn get_new_address(&self) -> Address {
 		let addr_args = vec![serde_json::json!("LDK output address")];
 		let addr = self
