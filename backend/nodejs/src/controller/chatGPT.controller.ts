@@ -27,8 +27,6 @@ export const generateResponse = async (req: Request, res: Response): Promise<any
         stop: ["You:"],
         });
 
-        console.log(JSON.stringify(response.data.choices[0].text));
-
         return res.status(Code.OK)
           .send(new HttpResponse(Code.OK, Status.OK, 'Created user', { reply: response.data.choices[0].text }));
     }

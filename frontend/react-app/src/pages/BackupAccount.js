@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { axiosPublic } from "../api/config";
 import { NavLink } from "react-router-dom";
 
 export default function BackupAccount() {

@@ -1,7 +1,7 @@
 import React, { Component, useState } from "react";
 import "./chatList.css";
 import ChatListItems from "./ChatListItems";
-import { axiosPublic } from "../../api/config";
+import { nodeClient } from "../../api/config";
 import { useEffect } from "react";
 
 export default function ChatList() {
@@ -11,7 +11,7 @@ export default function ChatList() {
   useEffect(() => {
     const getUsers = async () => {
       //call api
-      let response = await axiosPublic.get(`nodeapi/users`);
+      let response = await nodeClient.get(`/users`);
       setAllChats(response.data.data);
     }
     

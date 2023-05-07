@@ -7,11 +7,10 @@ services:
     container_name: sensei
     restart: unless-stopped
     ports:
-      - "9732:9732"
-      - "5000:5000"
       - "5401:5401"
     depends_on:
       - bitcoind
+      - postgres
     networks:
       bridgednet:
         ipv4_address: 192.168.20.2

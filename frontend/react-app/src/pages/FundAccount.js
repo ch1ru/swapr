@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { axiosPublic } from "../api/config";
 import { NavLink } from "react-router-dom";
 
 export default function FundAccount() {
@@ -10,8 +9,7 @@ export default function FundAccount() {
     useEffect(() => {
 
         const createWallet = async () => {
-            const response = await axiosPublic.post(`ldk/createwallet`);
-            console.log(response.data);
+            
         }
 
         const getFundingAddr = async () => {

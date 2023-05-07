@@ -1,29 +1,56 @@
 import React, { useEffect } from "react";
-import axiosClient from "../axios/axiosClient";
+import { senseiClient } from "../api/config";
+import SenseiClient from "@l2-technology/sensei-client";
+import { useContext } from "react";
 
 export default function Loading() {
 
-    useEffect(async () => {
+  useEffect(() => {
 
-        await axiosClient.post(`/nodes/start`, {
-            passphrase: "sensei", 
-            pubkey: '03082e433429cab04f5aac9a5b0dcbf170401c2e49a9859e79996d03839dbe65e3'
-        }).then((res) => {
-            
-            console.log(res)
-        }).catch((err) => {
-            console.log("there was an error")
-            console.log(err)
-        })
+    async function init() {
+      // initialize your sensei node
+      const { pubkey, macaroon } = await senseiClient.init({
+        username: 'satoshi5',
+        alias: 'satoshi5',
+        passphrase: 'satoshi',
+        electrumUrl: 'ssl://blockstream.info:993',
+        start: true
+      });
 
+      senseiClient.setMacaroon(macaroon);
+      console.log(macaroon)
 
-    })
+      //create node alice
+      const { alicePubkey, aliceMacaroon } = await senseiClient.createNode({
+        username: 'alice6',
+        alias: 'alice6',
+        passphrase: 'alice',
+        start: true
+      });
 
-    return (
-        <>
-            <div class="bg-green-500">
-                
-            </div>
-        </>
-    )
+      // search nodes for alice
+      const { nodes } = await senseiClient.getNodes({
+        page: 0,
+        searchTerm: alicePubkey,
+        take: 1
+      });
+
+      const aliceNodeInfo = nodes[0];
+      const { listenAddr, listenPort } = aliceNodeInfo;
+
+      console.log(aliceNodeInfo)
+    };
+
+    init();
+
+  })
+
+  return (
+    <>
+      <div class="bg-green-500">
+
+      </div>
+    </>
+  )
 }
+

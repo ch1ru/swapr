@@ -1,6 +1,6 @@
-import React, { Component, useState, createRef, useEffect } from "react";
+import React, { Component, useState, createRef, useEffect, useContext } from "react";
 import "./ChatContent.css";
-import { axiosPublic } from "../../api/config.js"
+import { nodeClient, senseiClient } from '../../api/config'
 import Avatar from "../chatlist/Avatar";
 import ChatItem from "./ChatItem";
 import { FaCog, FaCoins, FaPaperPlane, FaPlus } from "react-icons/fa";
@@ -8,6 +8,7 @@ var CryptoJS = require("crypto-js");
 
 export default class ChatContent extends Component {
   messagesEndRef = createRef(null);
+  
   
   chatItms = [];
 
@@ -48,11 +49,16 @@ export default class ChatContent extends Component {
           "https://pbs.twimg.com/profile_images/1116431270697766912/-NfnQHvh_400x400.jpg",
       });
 
-      let response = await axiosPublic.post(`nodeapi/chatgpt`, {message: this.state.msg});
+      let response = await nodeClient.post(`/chatgpt`, {message: this.state.msg});
 
-      let htlc = await axiosPublic.post(`ldk/sendmessage`, {pubkey: "", amount: 100, message: this.state.msg});
+      
 
-      console.log(htlc)
+      let pubkey = ""
+      senseiClient.keysend(pubkey, 20).then((res) => {
+        console.log("keysend successful")
+      }).catch((err) => {
+        console.log("could not keysend")
+      })
 
       this.chatItms.push({
         key: this.state.chat.length + 1,

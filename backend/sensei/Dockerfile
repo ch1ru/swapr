@@ -28,4 +28,4 @@ FROM rust:latest
 COPY --from=build-sensei /build/target/release/senseid .
 
 # set the startup command to run your binary
-CMD ["./senseid", "--network=regtest", "--bitcoind-rpc-host=bitcoind", "--bitcoind-rpc-port=18443", "--bitcoind-rpc-username=polaruser", "--bitcoind-rpc-password=polarpass", "--database-url=postgres://sensei:sensei@localhost:5432/sensei"]
+CMD ["./senseid", "--network=regtest", "--bitcoind-rpc-host=bitcoind", "--bitcoind-rpc-port=18443", "--bitcoind-rpc-username=polaruser", "--bitcoind-rpc-password=polarpass", "--database-url=postgres://sensei:sensei@postgres:5432/sensei"]
